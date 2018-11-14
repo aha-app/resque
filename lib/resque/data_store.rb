@@ -108,9 +108,9 @@ module Resque
         @redis = redis
       end
       def push_to_queue(queue,encoded_item)
-        @redis.pipelined do
-          watch_queue(queue)
-          @redis.rpush redis_key_for_queue(queue), encoded_item
+        @redis.multi do |multi|
+          multi.sadd(:queues, queue.to_s)
+          multi.rpush redis_key_for_queue(queue), encoded_item
         end
       end
 
@@ -137,9 +137,9 @@ module Resque
       end
 
       def remove_queue(queue)
-        @redis.pipelined do
-          @redis.srem(:queues, queue.to_s)
-          @redis.del(redis_key_for_queue(queue))
+        @redis.multi do |multi|
+          multi.srem(:queues, queue.to_s)
+          multi.del(redis_key_for_queue(queue))
         end
       end
 
